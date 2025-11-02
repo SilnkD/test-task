@@ -1,34 +1,34 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Patch, Req, UseGuards} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+@ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private users: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @ApiOperation({ summary: 'Get current user profile' })
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getMe(@Req() req) {
+    const user = await this.users.findById(req.user.sub);
+    if (!user) throw new NotFoundException('User not found');
+    return {
+      id: user.id,
+      login: user.login,
+      email: user.email,
+      displayName: user.displayName,
+      createdAt: user.createdAt,
+    };
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @ApiOperation({ summary: 'Update user profile or password' })
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  async update(@Req() req, @Body() dto: UpdateUserDto) {
+    return await this.users.updateProfile(req.user.sub, dto);
   }
 }
