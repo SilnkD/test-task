@@ -2,9 +2,8 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient, { setAccessToken, setUnauthorizedHandler } from '@/lib/apiClient';
-import { readToken, saveToken, clearToken } from '@/lib/authStorage';
+import { readAccessToken, saveTokens, clearTokens} from '@/lib/authStorage';
 
-/* ---------- типы ---------- */
 export type Profile = {
   id: string;
   email: string;
@@ -32,43 +31,51 @@ export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(() => {
-    clearToken();
+    clearTokens();
     setAccessToken(null);
     setProfile(null);
     router.push('/login');
   }, [router]);
 
-  // глобальный перехват 401
   useEffect(() => {
     setUnauthorizedHandler(logout);
   }, [logout]);
 
-  // загрузка профиля при наличии токена
   useEffect(() => {
-    const token = readToken();
+    const token = readAccessToken();
     if (token) {
       setAccessToken(token);
-      fetchProfile().catch(() => {});
+      fetchProfile().finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ---------- функции ---------- */
   const fetchProfile = useCallback(async () => {
-    const { data } = await apiClient.get<Profile>('/users/me');
-    setProfile(data);
-  }, []);
+    try {
+      const { data } = await apiClient.get<Profile>('/users/me');
+      setProfile(data);
+    } catch (err: any) {
+      // при неожиданных ошибках (500 и т.п.) — редирект на страницу ошибки
+      if (err?.response?.status >= 500) {
+        router.push('/error');
+      }
+    }
+  }, [router]);
 
   const login = useCallback(
     async (loginOrEmail: string, password: string) => {
-      const { data } = await apiClient.post<{ accessToken: string }>('/auth/login', {
-        loginOrEmail,
-        password,
-      });
-      saveToken(data.accessToken);
+      const { data } = await apiClient.post<{
+        accessToken: string;
+        refreshToken: string;
+      }>('/auth/login', { loginOrEmail, password });
+
+      saveTokens(data.accessToken, data.refreshToken);
       setAccessToken(data.accessToken);
+
       await fetchProfile();
       router.push('/profile');
     },
@@ -89,10 +96,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = useCallback(
     async (data: { email?: string; displayName?: string; password?: string }) => {
-      const res = await apiClient.patch<Profile>('/users/me', data);
-      setProfile(res.data);
+      try {
+        const res = await apiClient.patch<Profile>('/users/me', data);
+        setProfile(res.data);
+      } catch (err: any) {
+        if (err?.response?.status >= 500) router.push('/error');
+        throw err;
+      }
     },
-    []
+    [router]
   );
 
   const value = useMemo(
@@ -107,6 +119,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }),
     [profile, login, register, fetchProfile, updateProfile, logout]
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center text-neutral-600">
+        Loading...
+      </div>
+    );
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
