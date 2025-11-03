@@ -18,7 +18,6 @@ export class UsersController {
     if (!user) throw new NotFoundException('User not found');
     return {
       id: user.id,
-      login: user.login,
       email: user.email,
       displayName: user.displayName,
       createdAt: user.createdAt,

@@ -3,11 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterDto {
   @ApiProperty()
-  @IsString()
-  @Length(3, 64)
-  login: string;
-
-  @ApiProperty()
   @IsEmail()
   email: string;
 

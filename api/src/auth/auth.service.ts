@@ -13,15 +13,14 @@ interface AuthJwtPayload {
 export class AuthService {
   constructor(private users: UsersService, private jwt: JwtService) {}
 
-  async register({ login, email, password, displayName }) {
-    const existing = await this.users.findByLoginOrEmail(login, email);
+  async register({ email, password, displayName }) {
+    const existing = await this.users.findByLoginOrEmail(displayName, email);
     if (existing)
       throw new ConflictException('User with this login or email already exists');
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password + salt, 10);
     const user = await this.users.create({
-      login,
       email,
       passwordHash,
       salt,
@@ -64,7 +63,7 @@ export class AuthService {
   }
 
   private issueTokens(user: User) {
-    const payload: AuthJwtPayload = { sub: user.id, login: user.login };
+    const payload: AuthJwtPayload = { sub: user.id, login: user.email };
 
     const accessExp = (process.env.JWT_ACCESS_EXPIRES_IN ?? '15m') as any;
     const refreshExp = (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') as any;

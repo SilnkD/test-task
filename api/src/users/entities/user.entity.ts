@@ -6,10 +6,6 @@ export class User {
   id: string;
 
   @Index({ unique: true })
-  @Column({ length: 64 })
-  login: string;
-
-  @Index({ unique: true })
   @Column({ length: 255 })
   email: string;
 

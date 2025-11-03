@@ -13,8 +13,8 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(@InjectRepository(User) private repo: Repository<User>) {}
 
-  async findByLoginOrEmail(login: string, email: string) {
-    return this.repo.findOne({ where: [{ login }, { email }] });
+  async findByLoginOrEmail(displayName: string, email: string) {
+    return this.repo.findOne({ where: [{ displayName }, { email }] });
   }
 
   async findById(id: string) {
@@ -22,7 +22,7 @@ export class UsersService {
   }
 
   async create(data: Partial<User>) {
-    const exist = await this.findByLoginOrEmail(data.login!, data.email!);
+    const exist = await this.findByLoginOrEmail(data.displayName!, data.email!);
     if (exist)
       throw new ConflictException('User with this login or email already exists');
     const user = this.repo.create(data);
@@ -38,7 +38,6 @@ export class UsersService {
 
     const toUpdate: Partial<User> = {};
 
-    if (updates.login) toUpdate.login = updates.login;
     if (updates.email) toUpdate.email = updates.email;
     if (updates.displayName) toUpdate.displayName = updates.displayName;
 
