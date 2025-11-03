@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import useAuth from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuthContext';
 import Button from '@/components/Button';
 
 export default function Home() {

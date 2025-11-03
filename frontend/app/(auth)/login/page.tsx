@@ -1,7 +1,7 @@
 'use client';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
-import useAuth from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuthContext';
 import TextField from '@/components/TextField';
 import PasswordField from '@/components/PasswordField';
 import Button from '@/components/Button';

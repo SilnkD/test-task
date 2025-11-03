@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import useAuth from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuthContext';
 import Button from '@/components/Button';
 import TextField from '@/components/TextField';
 import PasswordField from '@/components/PasswordField';
