@@ -1,6 +1,9 @@
+version: '3.9'
+
 services:
   db:
     image: postgres:16-alpine
+    container_name: test_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -9,15 +12,34 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build: ./api
+    container_name: test_api
     ports:
       - "3000:3000"
     env_file:
       - ./api/.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: test_frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - api
+    environment:
+      - NODE_ENV=production
 
 volumes:
   pgdata:
