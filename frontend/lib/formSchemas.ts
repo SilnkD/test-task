@@ -7,15 +7,20 @@ export function validateDisplayName(name: string) {
 }
 
 export function validatePassword(password: string): string | null {
-  if (password.length < 8 || password.length > 72)
-    return 'Password must be between 8 and 72 characters';
+  const errors: string[] = [];
+
+  if (password.length < 8)
+    errors.push('Password must be at least 8 characters long');
+  if (password.length > 72)
+    errors.push('Password must not exceed 72 characters');
   if (!/[A-Z]/.test(password))
-    return 'Password must contain at least one uppercase letter';
+    errors.push('Password must contain at least one uppercase letter');
   if (!/[a-z]/.test(password))
-    return 'Password must contain at least one lowercase letter';
+    errors.push('Password must contain at least one lowercase letter');
   if (!/[0-9]/.test(password))
-    return 'Password must contain at least one digit';
+    errors.push('Password must contain at least one digit');
   if (!/[^A-Za-z0-9]/.test(password))
-    return 'Password must contain at least one special symbol';
-  return null;
+    errors.push('Password must contain at least one special symbol');
+
+  return errors.length > 0 ? errors.join('\n') : null;
 }
