@@ -19,6 +19,7 @@ export class AuthController {
   @HttpCode(200)
   @Post('login')
   login(@Body() dto: LoginDto) {
+    throw new Error('Test 500')
     return this.auth.login(dto);
   }
 
